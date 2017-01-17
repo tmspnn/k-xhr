@@ -1,0 +1,36 @@
+{
+  "name": "k-dom",
+  "version": "0.1.0",
+  "description": "Lightweight extended XMLHttpRequest",
+  "main": "dist/k-xhr.cjs.js",
+  "jsnext:main": "k-xhr.js",
+  "scripts": {
+    "build": "npm run build-cjs && npm run build-iife",
+    "build-cjs": "rollup -c -f cjs -o dist/k-xhr.cjs.js",
+    "build-iife": "rollup -c -f iife -o dist/k-xhr.min.js -n kXhr"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tmspnn/k-xhr.git"
+  },
+  "keywords": [
+    "xhr",
+    "k-xhr"
+  ],
+  "author": "Thomas Peng",
+  "license": "MIT",
+  "dependencies": {
+    "k-util": "^0.1.3"
+  },
+  "devDependencies": {
+    "babel-core": "^6.21.0",
+    "babel-eslint": "^7.1.1",
+    "babel-plugin-external-helpers": "^6.18.0",
+    "babel-preset-es2015": "^6.18.0",
+    "babel-runtime": "^6.20.0",
+    "eslint": "^3.13.1",
+    "rollup": "^0.36.4",
+    "rollup-plugin-babel": "^2.7.1",
+    "rollup-plugin-uglify": "^1.0.1"
+  }
+}
