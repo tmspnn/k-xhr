@@ -1,6 +1,6 @@
 {
   "name": "k-xhr",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Lightweight extended XMLHttpRequest",
   "main": "dist/k-xhr.cjs.js",
   "jsnext:main": "k-xhr.js",
