@@ -28,7 +28,7 @@ export default function Ajax(options) {
     resolve: xhrResolve,
     state: 'pending',
     then: xhrThen,
-    timeout: options.timeout || 3000,
+    timeout: options.timeout || 0,
     url: options.url,
     value: null,
     withCredentials: options.withCredentials || false
