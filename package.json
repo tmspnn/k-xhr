@@ -1,36 +1,28 @@
 {
   "name": "k-xhr",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "Lightweight extended XMLHttpRequest",
-  "main": "dist/k-xhr.cjs.js",
-  "jsnext:main": "k-xhr.js",
+  "main": "src/k-xhr.ts",
+  "types": "src/k-xhr.d.ts",
   "scripts": {
-    "build": "npm run build-cjs && npm run build-iife",
-    "build-cjs": "rollup -c -f cjs -o dist/k-xhr.cjs.js",
-    "build-iife": "rollup -c -f iife -o dist/k-xhr.min.js -n kXhr"
+    "test": "jest",
+    "build": "tsc && NODE_ENV=production webpack"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/tmspnn/k-xhr.git"
+    "url": "https://github.com/tmspnn/k-xhr"
   },
   "keywords": [
-    "xhr",
-    "k-xhr"
+    "k-xhr",
+    "XMLHttpRequest"
   ],
   "author": "Thomas Peng",
   "license": "MIT",
-  "dependencies": {
-    "k-util": "^0.1.3"
-  },
   "devDependencies": {
-    "babel-core": "^6.21.0",
-    "babel-eslint": "^7.1.1",
-    "babel-plugin-external-helpers": "^6.18.0",
-    "babel-preset-es2015": "^6.18.0",
-    "babel-runtime": "^6.20.0",
-    "eslint": "^3.13.1",
-    "rollup": "^0.36.4",
-    "rollup-plugin-babel": "^2.7.1",
-    "rollup-plugin-uglify": "^1.0.1"
+    "awesome-typescript-loader": "^5.0.0",
+    "jest": "^23.1.0",
+    "jsdom": "^11.11.0",
+    "source-map-loader": "^0.2.3",
+    "typescript": "^2.9.1"
   }
 }
