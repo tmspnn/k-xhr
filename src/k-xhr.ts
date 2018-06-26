@@ -1,13 +1,12 @@
 interface PromiseLike<T> {
-  state: string;
+  state: string; // 'pending' | 'fulfilled' | 'rejected'
   value: T;
-  callbacks: Array<(...args: any[]) => any>;
   error: any;
-  errorHandlers: Array<(...args: any[]) => any>;
-  finallyHandler: (...args: any[]) => any;
-  then: (resolve: (value: T) => any, reject: (error: any) => any) => PromiseLike<any>;
-  catch: (error: any) => PromiseLike<any>;
-  finally: (value: any) => void;
+  callbacks: Array<{ type: string; handler: (value: any) => any }>; // type: 'resolve' | 'reject'
+  finallyHandler: (xhr: PromiseLike<any>) => void;
+  then: (onResolve: (value: T) => any, onReject: (error: any) => any) => PromiseLike<any>;
+  catch: (onReject: (error: any) => any) => PromiseLike<any>;
+  finally: (onComplete: (xhr: PromiseLike<any>) => void) => PromiseLike<any>;
   cancel: () => void;
 }
 
@@ -19,11 +18,12 @@ export default function kXhr(options: {
   headers?: object;
   withCredentials?: boolean | string;
   data?: Document | FormData | ReadableStream | Blob;
-  beforeSend?: () => any;
+  beforeSend?: (xhr: any) => any;
+  onprogress?: (e: Event) => void;
   timeout?: number;
-}): PromiseLike<any> {
+}): PromiseLike<string> {
   const xhr = Object.assign(new XMLHttpRequest(), {
-    async: options.async || false,
+    async: options.async || true,
     beforeSend: options.beforeSend,
     callbacks: [],
     cancel: xhrCancel,
@@ -31,12 +31,12 @@ export default function kXhr(options: {
     contentType: options.contentType,
     data: options.data || null,
     error: null,
-    errorHandlers: [],
     extendedBy: 'k-xhr',
     finally: xhrFinally,
     finallyHandler: null,
     headers: options.headers,
     method: (options.method || 'get').toUpperCase(),
+    onprogress: options.onprogress,
     resolve: xhrResolve,
     reject: xhrReject,
     state: 'pending',
@@ -80,39 +80,54 @@ export default function kXhr(options: {
   function xhrResolve() {
     if (xhr.value && xhr.value.extendedBy == 'k-xhr') {
       xhr.value.callbacks.push(...xhr.callbacks);
-      xhr.value.errorHandlers.push(...xhr.errorHandlers);
       xhr.value.finallyHandler = xhr.finallyHandler;
       xhr.callbacks.length = 0;
-      xhr.errorHandlers.length = 0;
       xhr.finallyHandler = null;
     } else {
-      let onResolve;
-      while ((onResolve = xhr.callbacks.shift())) {
-        xhr.value = onResolve(xhr.value);
+      let cb;
+      while ((cb = xhr.callbacks.shift())) {
+        if (cb.type == 'resolve') {
+          try {
+            xhr.value = cb.handler(xhr.value);
+          } catch (e) {
+            xhr.state = 'rejected';
+            xhr.error = e;
+            return xhr.reject();
+          }
+        }
       }
       if (xhr.finallyHandler) {
-        xhr.finallyHandler(xhr.value);
+        xhr.finallyHandler(xhr);
       }
     }
   }
 
   function xhrReject() {
-    let onReject;
-    while ((onReject = xhr.errorHandlers.shift())) {
-      onReject(xhr.error);
+    let cb;
+    while ((cb = xhr.callbacks.shift())) {
+      if (cb.type == 'reject') {
+        xhr.value = cb.handler(xhr.error);
+        if (xhr.value != null) {
+          xhr.state = 'fulfilled';
+          return xhr.resolve();
+        }
+      }
     }
     if (xhr.finallyHandler) {
-      xhr.finallyHandler(xhr.value);
+      xhr.finallyHandler(xhr);
     }
   }
 
-  function xhrThen(onResolve: (value: any) => any) {
-    xhr.callbacks.push(onResolve);
+  function xhrThen(onResolve: (value: any) => any, onReject?: (error: any) => any) {
+    xhr.callbacks.push({ type: 'resolve', handler: onResolve });
+    if (onReject) {
+      xhr.callbacks.push({ type: 'reject', handler: onReject });
+    }
     return xhr;
   }
 
   function xhrCatch(onReject: (error: any) => any) {
-    xhr.errorHandlers.push(onReject);
+    xhr.callbacks.push({ type: 'reject', handler: onReject });
     return xhr;
   }
 
@@ -120,7 +135,7 @@ export default function kXhr(options: {
     xhr.abort();
   }
 
-  function xhrFinally(onComplete: (...args: any[]) => any) {
+  function xhrFinally(onComplete: (xhr: PromiseLike<any>) => void) {
     xhr.finallyHandler = onComplete;
     return xhr;
   }

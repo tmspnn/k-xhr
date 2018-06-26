@@ -8,21 +8,21 @@ declare function kXhr(options: {
   headers?: object;
   withCredentials?: boolean | string;
   data?: Document | FormData | ReadableStream | Blob;
-  beforeSend?: () => any;
+  beforeSend?: (xhr: any) => any;
+  onprogress?: (e: Event) => void;
   timeout?: number;
-}): PromiseLike<any>;
+}): PromiseLike<string>;
 
 declare namespace kXhr {
   interface PromiseLike<T> {
-    state: string;
+    state: string; // 'pending' | 'fulfilled' | 'rejected'
     value: T;
-    callbacks: Array<(...args: any[]) => any>;
     error: any;
-    errorHandlers: Array<(...args: any[]) => any>;
-    finallyHandler: (...args: any[]) => any;
-    then: (resolve: (value: T) => any, reject: (error: any) => any) => PromiseLike<any>;
-    catch: (error: any) => PromiseLike<any>;
-    finally: (value: any) => void;
+    callbacks: Array<{ type: string; handler: (value: any) => any }>; // type: 'resolve' | 'reject'
+    finallyHandler: (xhr: PromiseLike<any>) => void;
+    then: (onResolve: (value: T) => any, onReject: (error: any) => any) => PromiseLike<any>;
+    catch: (onReject: (error: any) => any) => PromiseLike<any>;
+    finally: (onComplete: (xhr: PromiseLike<any>) => void) => PromiseLike<any>;
     cancel: () => void;
   }
 }
