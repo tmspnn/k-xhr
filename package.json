@@ -1,6 +1,6 @@
 {
   "name": "k-xhr",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Lightweight, promise-like XMLHttpRequest",
   "main": "dist/k-xhr.js",
   "types": "src/k-xhr.d.ts",
@@ -24,5 +24,8 @@
     "jsdom": "^11.11.0",
     "source-map-loader": "^0.2.3",
     "typescript": "^2.9.2"
+  },
+  "jest": {
+    "testURL": "http://localhost"
   }
 }

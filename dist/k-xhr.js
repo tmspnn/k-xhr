@@ -10,24 +10,27 @@ function kXhr(options) {
         contentType: options.contentType,
         data: options.data || null,
         error: null,
-        extendedBy: 'k-xhr',
+        extendedBy: "k-xhr",
         finally: xhrFinally,
         finallyHandler: null,
         headers: options.headers,
-        method: (options.method || 'get').toUpperCase(),
+        method: (options.method || "get").toUpperCase(),
         onprogress: options.onprogress,
         resolve: xhrResolve,
         reject: xhrReject,
-        state: 'pending',
+        state: "pending",
         then: xhrThen,
         timeout: options.timeout || 0,
         url: options.url,
         value: null,
         withCredentials: options.withCredentials || false
     });
+    if (xhr.upload) {
+        xhr.upload.onprogress = options.onprogress;
+    }
     xhr.open(xhr.method, xhr.url, xhr.async);
     if (xhr.contentType) {
-        xhr.setRequestHeader('Content-Type', xhr.contentType);
+        xhr.setRequestHeader("Content-Type", xhr.contentType);
     }
     if (xhr.headers) {
         for (var h in xhr.headers) {
@@ -38,7 +41,7 @@ function kXhr(options) {
     }
     xhr.onload = function () {
         if (xhr.status >= 200 && xhr.status < 400) {
-            xhr.state = 'fulfilled';
+            xhr.state = "fulfilled";
             xhr.value = xhr.responseText;
             xhr.resolve();
         }
@@ -47,7 +50,7 @@ function kXhr(options) {
         }
     };
     xhr.onerror = function () {
-        xhr.state = 'rejected';
+        xhr.state = "rejected";
         xhr.error = xhr.responseText || xhr.status;
         xhr.reject();
     };
@@ -58,7 +61,7 @@ function kXhr(options) {
     return xhr;
     function xhrResolve() {
         var _a;
-        if (xhr.value && xhr.value.extendedBy == 'k-xhr') {
+        if (xhr.value && xhr.value.extendedBy == "k-xhr") {
             (_a = xhr.value.callbacks).push.apply(_a, xhr.callbacks);
             xhr.value.finallyHandler = xhr.finallyHandler;
             xhr.callbacks.length = 0;
@@ -67,12 +70,12 @@ function kXhr(options) {
         else {
             var cb = void 0;
             while ((cb = xhr.callbacks.shift())) {
-                if (cb.type == 'resolve') {
+                if (cb.type == "resolve") {
                     try {
                         xhr.value = cb.handler(xhr.value);
                     }
                     catch (e) {
-                        xhr.state = 'rejected';
+                        xhr.state = "rejected";
                         xhr.error = e;
                         return xhr.reject();
                     }
@@ -86,10 +89,10 @@ function kXhr(options) {
     function xhrReject() {
         var cb;
         while ((cb = xhr.callbacks.shift())) {
-            if (cb.type == 'reject') {
+            if (cb.type == "reject") {
                 xhr.value = cb.handler(xhr.error);
                 if (xhr.value != null) {
-                    xhr.state = 'fulfilled';
+                    xhr.state = "fulfilled";
                     return xhr.resolve();
                 }
             }
@@ -99,14 +102,14 @@ function kXhr(options) {
         }
     }
     function xhrThen(onResolve, onReject) {
-        xhr.callbacks.push({ type: 'resolve', handler: onResolve });
+        xhr.callbacks.push({ type: "resolve", handler: onResolve });
         if (onReject) {
-            xhr.callbacks.push({ type: 'reject', handler: onReject });
+            xhr.callbacks.push({ type: "reject", handler: onReject });
         }
         return xhr;
     }
     function xhrCatch(onReject) {
-        xhr.callbacks.push({ type: 'reject', handler: onReject });
+        xhr.callbacks.push({ type: "reject", handler: onReject });
         return xhr;
     }
     function xhrCancel() {

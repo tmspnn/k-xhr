@@ -1,9 +1,9 @@
-const fs = require('fs');
-const path = require('path');
-const { JSDOM } = require('jsdom');
+const fs = require("fs");
+const path = require("path");
+const { JSDOM } = require("jsdom");
 
-const libSource = readFileAsTexts('../dist/k-xhr.min.js');
-const testCases = ['options'].map(name => ({
+const libSource = readFileAsTexts("../dist/k-xhr.min.js");
+const testCases = ["options"].map(name => ({
   name,
   source: readFileAsTexts(`${name}.case.js`)
 }));
@@ -17,7 +17,9 @@ const window = new JSDOM(
         </body>
     </html>`,
   {
-    runScripts: 'outside-only'
+    url: "http://localhost",
+    referrer: "http://localhost.com",
+    runScripts: "outside-only"
   }
 ).window;
 
@@ -30,5 +32,7 @@ testCases.forEach(t => {
 });
 
 function readFileAsTexts(relativePath) {
-  return fs.readFileSync(path.resolve(__dirname, relativePath), { encoding: 'utf8' });
+  return fs.readFileSync(path.resolve(__dirname, relativePath), {
+    encoding: "utf8"
+  });
 }

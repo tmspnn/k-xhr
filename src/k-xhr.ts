@@ -4,7 +4,10 @@ interface PromiseLike<T> {
   error: any;
   callbacks: Array<{ type: string; handler: (value: any) => any }>; // type: 'resolve' | 'reject'
   finallyHandler: (xhr: PromiseLike<any>) => void;
-  then: (onResolve: (value: T) => any, onReject: (error: any) => any) => PromiseLike<any>;
+  then: (
+    onResolve: (value: T) => any,
+    onReject: (error: any) => any
+  ) => PromiseLike<any>;
   catch: (onReject: (error: any) => any) => PromiseLike<any>;
   finally: (onComplete: (xhr: PromiseLike<any>) => void) => PromiseLike<any>;
   cancel: () => void;
@@ -19,7 +22,7 @@ export default function kXhr(options: {
   withCredentials?: boolean | string;
   data?: Document | FormData | ReadableStream | Blob;
   beforeSend?: (xhr: any) => any;
-  onprogress?: (e: Event) => void;
+  onprogress?: (e: ProgressEvent) => void;
   timeout?: number;
 }): PromiseLike<string> {
   const xhr = Object.assign(new XMLHttpRequest(), {
@@ -31,24 +34,27 @@ export default function kXhr(options: {
     contentType: options.contentType,
     data: options.data || null,
     error: null,
-    extendedBy: 'k-xhr',
+    extendedBy: "k-xhr",
     finally: xhrFinally,
     finallyHandler: null,
     headers: options.headers,
-    method: (options.method || 'get').toUpperCase(),
+    method: (options.method || "get").toUpperCase(),
     onprogress: options.onprogress,
     resolve: xhrResolve,
     reject: xhrReject,
-    state: 'pending',
+    state: "pending",
     then: xhrThen,
     timeout: options.timeout || 0,
     url: options.url,
     value: null,
     withCredentials: options.withCredentials || false
   }) as any;
+  if (xhr.upload) {
+    xhr.upload.onprogress = options.onprogress;
+  }
   xhr.open(xhr.method, xhr.url, xhr.async);
   if (xhr.contentType) {
-    xhr.setRequestHeader('Content-Type', xhr.contentType);
+    xhr.setRequestHeader("Content-Type", xhr.contentType);
   }
   if (xhr.headers) {
     for (let h in xhr.headers) {
@@ -59,7 +65,7 @@ export default function kXhr(options: {
   }
   xhr.onload = () => {
     if (xhr.status >= 200 && xhr.status < 400) {
-      xhr.state = 'fulfilled';
+      xhr.state = "fulfilled";
       xhr.value = xhr.responseText;
       xhr.resolve();
     } else {
@@ -67,7 +73,7 @@ export default function kXhr(options: {
     }
   };
   xhr.onerror = () => {
-    xhr.state = 'rejected';
+    xhr.state = "rejected";
     xhr.error = xhr.responseText || xhr.status;
     xhr.reject();
   };
@@ -78,7 +84,7 @@ export default function kXhr(options: {
   return xhr;
 
   function xhrResolve() {
-    if (xhr.value && xhr.value.extendedBy == 'k-xhr') {
+    if (xhr.value && xhr.value.extendedBy == "k-xhr") {
       xhr.value.callbacks.push(...xhr.callbacks);
       xhr.value.finallyHandler = xhr.finallyHandler;
       xhr.callbacks.length = 0;
@@ -86,11 +92,11 @@ export default function kXhr(options: {
     } else {
       let cb;
       while ((cb = xhr.callbacks.shift())) {
-        if (cb.type == 'resolve') {
+        if (cb.type == "resolve") {
           try {
             xhr.value = cb.handler(xhr.value);
           } catch (e) {
-            xhr.state = 'rejected';
+            xhr.state = "rejected";
             xhr.error = e;
             return xhr.reject();
           }
@@ -105,10 +111,10 @@ export default function kXhr(options: {
   function xhrReject() {
     let cb;
     while ((cb = xhr.callbacks.shift())) {
-      if (cb.type == 'reject') {
+      if (cb.type == "reject") {
         xhr.value = cb.handler(xhr.error);
         if (xhr.value != null) {
-          xhr.state = 'fulfilled';
+          xhr.state = "fulfilled";
           return xhr.resolve();
         }
       }
@@ -118,16 +124,19 @@ export default function kXhr(options: {
     }
   }
 
-  function xhrThen(onResolve: (value: any) => any, onReject?: (error: any) => any) {
-    xhr.callbacks.push({ type: 'resolve', handler: onResolve });
+  function xhrThen(
+    onResolve: (value: any) => any,
+    onReject?: (error: any) => any
+  ) {
+    xhr.callbacks.push({ type: "resolve", handler: onResolve });
     if (onReject) {
-      xhr.callbacks.push({ type: 'reject', handler: onReject });
+      xhr.callbacks.push({ type: "reject", handler: onReject });
     }
     return xhr;
   }
 
   function xhrCatch(onReject: (error: any) => any) {
-    xhr.callbacks.push({ type: 'reject', handler: onReject });
+    xhr.callbacks.push({ type: "reject", handler: onReject });
     return xhr;
   }
 
