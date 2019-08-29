@@ -1,43 +1,8 @@
-# k-xhr
+export as namespace Kxhr;
 
-Lightweight, promise-like XMLHttpRequest.
+export = XhrPromise;
 
-## Installation
-
-```
-npm install k-xhr
-```
-
-## Quick Start
-
-```javascript
-import Kxhr from "k-xhr";
-
-new Kxhr({
-  url: "http://httpbin.org/post?custom_param=your_url_param",
-  method: "post",
-  contentType: "application/json",
-  headers: { "X-Custom-Header": "your_custom_header" },
-  withCredentials: true, // For CORS
-  data: JSON.stringify({ msg: "Running POST test" }),
-  beforeSend: xhr => {
-    console.log(xhr); // The XMLHttpRequest instance
-  },
-  onProgress: e => {
-    console.log(e); // Progress event
-  }
-})
-  .then(responseText => console.log(responseText))
-  .catch(e => console.error(e))
-  .finally(xhr => {
-    console.log(xhr);
-  });
-```
-
-## Documentation
-
-```typescript
-class Kxhr {
+declare class XhrPromise {
   state: "pending" | "fulfilled" | "rejected";
   value: any;
   error: Error | null;
@@ -74,4 +39,3 @@ class Kxhr {
 
   finally: (onComplete: (xhr: XMLHttpRequest) => void) => this;
 }
-```

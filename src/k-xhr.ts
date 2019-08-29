@@ -1,151 +1,132 @@
-interface PromiseLike<T> {
-  state: string; // 'pending' | 'fulfilled' | 'rejected'
-  value: T;
-  error: any;
-  callbacks: Array<{ type: string; handler: (value: any) => any }>; // type: 'resolve' | 'reject'
-  finallyHandler: (xhr: PromiseLike<any>) => void;
-  then: (
-    onResolve: (value: T) => any,
-    onReject: (error: any) => any
-  ) => PromiseLike<any>;
-  catch: (onReject: (error: any) => any) => PromiseLike<any>;
-  finally: (onComplete: (xhr: PromiseLike<any>) => void) => PromiseLike<any>;
-  cancel: () => void;
-}
+export default class XhrPromise {
+  state: "pending" | "fulfilled" | "rejected" = "pending";
+  value: any = null;
+  error: Error | null = null;
+  callbacks: Array<{ type: "resolve" | "reject"; handler: (value: any) => any }> = [];
+  finallyHandler: ((xhr: XMLHttpRequest) => void) | null = null;
+  xhr = new XMLHttpRequest();
 
-export default function kXhr(options: {
-  url: string;
-  method?: string;
-  async?: boolean;
-  contentType?: string;
-  headers?: object;
-  withCredentials?: boolean | string;
-  data?: Document | FormData | ReadableStream | Blob;
-  beforeSend?: (xhr: any) => any;
-  onprogress?: (e: ProgressEvent) => void;
-  timeout?: number;
-}): PromiseLike<string> {
-  const xhr = Object.assign(new XMLHttpRequest(), {
-    async: options.async || true,
-    beforeSend: options.beforeSend,
-    callbacks: [],
-    cancel: xhrCancel,
-    catch: xhrCatch,
-    contentType: options.contentType,
-    data: options.data || null,
-    error: null,
-    extendedBy: "k-xhr",
-    finally: xhrFinally,
-    finallyHandler: null,
-    headers: options.headers,
-    method: (options.method || "get").toUpperCase(),
-    onprogress: options.onprogress,
-    resolve: xhrResolve,
-    reject: xhrReject,
-    state: "pending",
-    then: xhrThen,
-    timeout: options.timeout || 0,
-    url: options.url,
-    value: null,
-    withCredentials: options.withCredentials || false
-  }) as any;
-  if (xhr.upload) {
-    xhr.upload.onprogress = options.onprogress;
-  }
-  xhr.open(xhr.method, xhr.url, xhr.async);
-  if (xhr.contentType) {
-    xhr.setRequestHeader("Content-Type", xhr.contentType);
-  }
-  if (xhr.headers) {
-    for (let h in xhr.headers) {
-      if (xhr.headers.hasOwnProperty(h)) {
-        xhr.setRequestHeader(h, xhr.headers[h]);
+  constructor(options: {
+    url: string;
+    method?: "get" | "head" | "post" | "put" | "delete" | "connect" | "options" | "trace" | "patch";
+    async?: boolean;
+    contentType?: string;
+    headers?: { [k: string]: string };
+    withCredentials?: boolean;
+    data?: Document | FormData | ReadableStream | Blob;
+    beforeSend?: (xhr: XMLHttpRequest) => void;
+    onProgress?: (e: ProgressEvent) => void;
+    timeout?: number;
+  }) {
+    const { xhr } = this;
+    const {
+      url,
+      method,
+      async,
+      contentType,
+      headers,
+      withCredentials,
+      data,
+      beforeSend,
+      onProgress,
+      timeout
+    } = options;
+    xhr.open((method || "get").toUpperCase(), url, async != false);
+    if (contentType) xhr.setRequestHeader("Content-Type", contentType);
+    if (headers) {
+      for (let h in headers) {
+        if (headers.hasOwnProperty(h)) {
+          xhr.setRequestHeader(h, headers[h]);
+        }
       }
     }
+    xhr.withCredentials = withCredentials || false;
+    xhr.timeout = timeout || 0;
+    xhr.onload = this.onLoad;
+    xhr.onerror = this.onError;
+    if (xhr.upload && onProgress) xhr.upload.onprogress = onProgress;
+    if (beforeSend) beforeSend(xhr);
+    setTimeout(() => xhr.send(data));
   }
-  xhr.onload = () => {
+
+  onLoad = () => {
+    const { xhr } = this;
     if (xhr.status >= 200 && xhr.status < 400) {
-      xhr.state = "fulfilled";
-      xhr.value = xhr.responseText;
-      xhr.resolve();
+      this.state = "fulfilled";
+      this.value = xhr.responseText;
+      this.resolve();
     } else {
-      xhr.onerror();
+      this.onError();
     }
   };
-  xhr.onerror = () => {
-    xhr.state = "rejected";
-    xhr.error = xhr.responseText || xhr.status;
-    xhr.reject();
+
+  onError = () => {
+    const { xhr } = this;
+    this.state = "rejected";
+    this.error = new Error(xhr.responseText || xhr.statusText);
+    this.reject();
   };
-  if (xhr.beforeSend) {
-    xhr.beforeSend(xhr);
-  }
-  setTimeout(() => xhr.send(xhr.data));
-  return xhr;
 
-  function xhrResolve() {
-    if (xhr.value && xhr.value.extendedBy == "k-xhr") {
-      xhr.value.callbacks.push(...xhr.callbacks);
-      xhr.value.finallyHandler = xhr.finallyHandler;
-      xhr.callbacks.length = 0;
-      xhr.finallyHandler = null;
+  resolve = () => {
+    if (this.value instanceof XhrPromise) {
+      const p = this.value;
+      p.callbacks.push(...this.callbacks);
+      p.finallyHandler = this.finallyHandler;
+      this.callbacks.length = 0;
+      this.finallyHandler = null;
+    } else if (this.callbacks.length) {
+      let cb = this.callbacks.shift();
+      if (cb!.type == "resolve") {
+        try {
+          this.value = cb!.handler(this.value);
+          this.resolve();
+        } catch (e) {
+          this.state = "rejected";
+          this.error = e;
+          this.reject();
+        }
+      } else {
+        this.resolve();
+      }
+    } else if (this.finallyHandler) {
+      this.finallyHandler(this.xhr);
+    }
+  };
+
+  reject = () => {
+    if (this.callbacks.length) {
+      let cb = this.callbacks.shift();
+      if (cb!.type == "reject") {
+        this.value = cb!.handler(this.error);
+        this.state = "fulfilled";
+        this.resolve();
+      } else {
+        this.reject();
+      }
+    } else if (this.finallyHandler) {
+      this.finallyHandler(this.xhr);
     } else {
-      let cb;
-      while ((cb = xhr.callbacks.shift())) {
-        if (cb.type == "resolve") {
-          try {
-            xhr.value = cb.handler(xhr.value);
-          } catch (e) {
-            xhr.state = "rejected";
-            xhr.error = e;
-            return xhr.reject();
-          }
-        }
-      }
-      if (xhr.finallyHandler) {
-        xhr.finallyHandler(xhr);
-      }
+      throw this.error;
     }
-  }
+  };
 
-  function xhrReject() {
-    let cb;
-    while ((cb = xhr.callbacks.shift())) {
-      if (cb.type == "reject") {
-        xhr.value = cb.handler(xhr.error);
-        if (xhr.value != null) {
-          xhr.state = "fulfilled";
-          return xhr.resolve();
-        }
-      }
-    }
-    if (xhr.finallyHandler) {
-      xhr.finallyHandler(xhr);
-    }
-  }
+  then = (onResolve: (value: any) => any, onReject?: (error: Error) => any) => {
+    this.callbacks.push({ type: "resolve", handler: onResolve });
+    if (onReject) this.callbacks.push({ type: "reject", handler: onReject });
+    return this;
+  };
 
-  function xhrThen(
-    onResolve: (value: any) => any,
-    onReject?: (error: any) => any
-  ) {
-    xhr.callbacks.push({ type: "resolve", handler: onResolve });
-    if (onReject) {
-      xhr.callbacks.push({ type: "reject", handler: onReject });
-    }
-    return xhr;
-  }
+  catch = (onReject: (error: Error) => any) => {
+    this.callbacks.push({ type: "reject", handler: onReject });
+    return this;
+  };
 
-  function xhrCatch(onReject: (error: any) => any) {
-    xhr.callbacks.push({ type: "reject", handler: onReject });
-    return xhr;
-  }
+  cancel = () => {
+    this.xhr.abort();
+  };
 
-  function xhrCancel() {
-    xhr.abort();
-  }
-
-  function xhrFinally(onComplete: (xhr: PromiseLike<any>) => void) {
-    xhr.finallyHandler = onComplete;
-    return xhr;
-  }
+  finally = (onComplete: (xhr: XMLHttpRequest) => void) => {
+    this.finallyHandler = onComplete;
+    return this;
+  };
 }
