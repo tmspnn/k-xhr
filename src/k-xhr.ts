@@ -13,7 +13,15 @@ export default class XhrPromise {
     contentType?: string;
     headers?: { [k: string]: string };
     withCredentials?: boolean;
-    data?: Document | FormData | ReadableStream | Blob;
+    data?:
+      | Document
+      | FormData
+      | ReadableStream
+      | Blob
+      | BufferSource
+      | URLSearchParams
+      | string
+      | null;
     beforeSend?: (xhr: XMLHttpRequest) => void;
     onProgress?: (e: ProgressEvent) => void;
     timeout?: number;
