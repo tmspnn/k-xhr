@@ -30,7 +30,7 @@ kxhr("https://jsonplaceholder.typicode.com/posts", "post", JSON.stringify(data),
 
 ```javascript
 let i = 0;
-return kxhr("https://jsonplaceholder.typicode.com/todos/1")
+kxhr("https://jsonplaceholder.typicode.com/todos/1")
   .then(() => {
     ++i; // i == 1
     throw new Error("catch 1");
