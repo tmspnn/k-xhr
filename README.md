@@ -1,12 +1,14 @@
 # k-xhr
 
-Lightweight, promise-like XMLHttpRequest.
+Lightweight XMLHttpRequest.
 
 ## Installation
 
 ```
 npm install k-xhr
 ```
+
+Thansk to [JSONPlaceholder](https://jsonplaceholder.typicode.com/) for their testing API.
 
 ## Quick Start
 
@@ -20,16 +22,16 @@ new Kxhr({
   headers: { "X-Custom-Header": "your_custom_header" },
   withCredentials: true, // For CORS
   data: JSON.stringify({ msg: "Running POST test" }),
-  beforeSend: xhr => {
+  beforeSend: (xhr) => {
     console.log(xhr); // The XMLHttpRequest instance
   },
-  onProgress: e => {
+  onProgress: (e) => {
     console.log(e); // Progress event
   }
 })
-  .then(responseText => console.log(responseText))
-  .catch(e => console.error(e))
-  .finally(xhr => {
+  .then((responseText) => console.log(responseText))
+  .catch((e) => console.error(e))
+  .finally((xhr) => {
     console.log(xhr);
   });
 ```

@@ -1,49 +1,39 @@
-export as namespace Kxhr;
-
-export = XhrPromise;
-
-declare class XhrPromise {
-  state: "pending" | "fulfilled" | "rejected";
-  value: any;
-  error: Error | null;
-  callbacks: Array<{ type: "resolve" | "reject"; handler: (value: any) => any }>;
-  finallyHandler: ((xhr: XMLHttpRequest) => void) | null;
-  xhr: XMLHttpRequest;
-
-  constructor(options: {
-    url: string;
-    method?: "get" | "head" | "post" | "put" | "delete" | "connect" | "options" | "trace" | "patch";
-    async?: boolean;
+declare function kxhr(
+  url: string,
+  method: string,
+  data:
+    | Document
+    | FormData
+    | ReadableStream
+    | Blob
+    | BufferSource
+    | URLSearchParams
+    | string
+    | null,
+  options: {
+    success?: (cb: any) => void;
+    fail?: (e: Error) => void;
+    complete?: (k: Kxhr) => void;
     contentType?: string;
     headers?: { [k: string]: string };
     withCredentials?: boolean;
-    data?:
-      | Document
-      | FormData
-      | ReadableStream
-      | Blob
-      | BufferSource
-      | URLSearchParams
-      | string
-      | null;
-    beforeSend?: (xhr: XMLHttpRequest) => void;
-    onProgress?: (e: ProgressEvent) => void;
     timeout?: number;
-  });
+    onProgress?: (e: ProgressEvent) => void;
+    beforeSend?: (xhr: XMLHttpRequest) => void;
+  }
+): Kxhr;
 
-  onLoad: () => void;
-
-  onError: () => void;
-
-  resolve: () => void;
-
-  reject: () => void;
-
-  then: (onResolve: (value: any) => any, onReject?: (error: Error) => any) => this;
-
-  catch: (onReject: (error: Error) => any) => this;
-
+interface Kxhr {
+  state: "pending" | "resolved" | "rejected" | "cancelled";
+  result: any;
+  err: null | Error;
+  resolve: null | (() => void);
+  reject: null | (() => void);
+  callbacks: Array<(any) => any>;
+  onComplete: null | ((Kxhr) => void);
+  xhr: XMLHttpRequest;
+  then: (onResolve: (r: any) => any, onReject?: (e: Error) => any) => Kxhr;
+  catch: (onReject: (e: Error) => any) => Kxhr;
   cancel: () => void;
-
-  finally: (onComplete: (xhr: XMLHttpRequest) => void) => this;
+  finally: (onComplete: (k: Kxhr) => void) => Kxhr;
 }

@@ -1,26 +1,29 @@
 module.exports = {
   mode: "production",
-  devtool: "cheap-eval-source-map",
+  devtool: "cheap-module-source-map",
   context: __dirname + "/src",
-  entry: __dirname + "/src/k-xhr.ts",
+  entry: "./k-xhr.js",
   output: {
     path: __dirname + "/dist",
     filename: "k-xhr.js",
-    library: "Kxhr",
-    libraryExport: "default",
-    libraryTarget: "umd",
+    library: {
+      name: "kxhr",
+      type: "umd2",
+      export: "default"
+    },
     globalObject: "this"
   },
   module: {
     rules: [
       {
-        test: /\.ts$/,
-        loader: "awesome-typescript-loader"
-      },
-      {
-        enforce: "pre",
-        test: /\.js$/,
-        loader: "source-map-loader"
+        test: /\.?js$/,
+        exclude: /node_modules/,
+        use: {
+          loader: "babel-loader",
+          options: {
+            presets: [["@babel/preset-env"]]
+          }
+        }
       }
     ]
   }
