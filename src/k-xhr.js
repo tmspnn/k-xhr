@@ -53,7 +53,13 @@ function next() {
     }
   }
   if (typeof this.onComplete == "function") {
-    this.onComplete(this);
+    if (isPromise(this.result)) {
+      if (typeof this.result.finally == "function") {
+        this.result.finally(this.onComplete);
+      }
+    } else {
+      this.onComplete(this);
+    }
   }
 }
 
