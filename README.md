@@ -18,7 +18,7 @@ import kxhr from "k-xhr";
 const data = { id: 1, data: "Testing string" };
 
 kxhr("https://jsonplaceholder.typicode.com/posts", "post", JSON.stringify(data), {
-  contentType: "application/json"
+  contentType: "application/json",
 }).then((res) => {
   const json = JSON.parse(res);
   console.log(json.id);
@@ -33,14 +33,14 @@ let i = 0;
 
 kxhr("https://jsonplaceholder.typicode.com/todos/1")
   .then(() => {
-    ++i; // i == 1
+    ++i; // i = 1
     throw new Error("catch 1");
   })
   .catch((e) => {
-    ++i; // i == 2
+    ++i; // i = 2
   })
   .then(() => {
-    ++i; // i == 3
+    ++i; // i = 3
     throw new Error("catch 2");
   })
   .catch((e) => {

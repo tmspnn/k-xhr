@@ -1,3 +1,7 @@
+function isPromise(o) {
+  return o instanceof Object && typeof o.then == "function";
+}
+
 function then(onResolve, onReject) {
   if (typeof onResolve == "function") {
     this.callbacks.push({ type: "resolve", f: onResolve });
@@ -27,53 +31,29 @@ function kFinally(onComplete) {
   return this;
 }
 
-function resolve() {
-  if (this.result instanceof Object && typeof this.result.then == "function") {
-    // If this.result is of type Promise
-    let cb;
-    while ((cb = this.callbacks.shift())) {
+function next() {
+  for (let i = 0; i < this.callbacks.length; ++i) {
+    const cb = this.callbacks[i];
+    if (isPromise(this.result)) {
       if (cb.type == "resolve") {
         this.result.then(cb.f);
       } else if (cb.type == "reject") {
         this.result.catch(cb.f);
       }
-    }
-    if (typeof this.onComplete == "function" && typeof this.result.finally == "function") {
-      this.result.finally(this.onComplete);
-    }
-  } else if (this.callbacks.length > 0) {
-    const cb = this.callbacks.shift();
-    if (cb.type == "resolve") {
+    } else if (this.state == "resolved" && cb.type == "resolve") {
       try {
         this.result = cb.f(this.result);
-        this.resolve();
       } catch (e) {
         this.state = "rejected";
         this.err = e;
-        this.reject();
       }
-    } else {
-      this.resolve();
-    }
-  } else if (typeof this.onComplete == "function") {
-    this.onComplete(this);
-  }
-}
-
-function reject() {
-  if (this.callbacks.length > 0) {
-    const cb = this.callbacks.shift();
-    if (cb.type == "reject") {
+    } else if (this.state == "rejected" && cb.type == "reject") {
       this.result = cb.f(this.err);
       this.state = "resolved";
-      this.resolve();
-    } else {
-      this.reject();
     }
-  } else if (typeof this.onComplete == "function") {
+  }
+  if (typeof this.onComplete == "function") {
     this.onComplete(this);
-  } else {
-    throw this.err;
   }
 }
 
@@ -81,7 +61,7 @@ function onLoad() {
   if (this.xhr.status >= 200 && this.xhr.status < 400) {
     this.state = "resolved";
     this.result = this.xhr.responseText;
-    this.resolve();
+    this.next();
   } else {
     this.onError();
   }
@@ -90,7 +70,7 @@ function onLoad() {
 function onError() {
   this.state = "rejected";
   this.err = new Error(this.xhr.responseText || this.xhr.statusText);
-  this.reject();
+  this.next();
 }
 
 /**
@@ -117,7 +97,7 @@ export default function kxhr(url, method = "get", data = null, options = {}) {
     reject: null,
     callbacks: [],
     onComplete: null,
-    xhr: new XMLHttpRequest()
+    xhr: new XMLHttpRequest(),
   };
 
   if (typeof options.success == "function") {
@@ -150,8 +130,7 @@ export default function kxhr(url, method = "get", data = null, options = {}) {
   k.xhr.timeout = options.timeout || 0;
   k.xhr.onload = onLoad.bind(k);
   k.xhr.onerror = onError.bind(k);
-  k.resolve = resolve.bind(k);
-  k.reject = reject.bind(k);
+  k.next = next.bind(k);
   k.then = then.bind(k);
   k.catch = kCatch.bind(k);
   k.cancel = cancel.bind(k);

@@ -1,6 +1,6 @@
 {
   "name": "k-xhr",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Lightweight XMLHttpRequest",
   "main": "dist/k-xhr.js",
   "types": "types/k-xhr.d.ts",
