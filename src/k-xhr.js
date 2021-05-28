@@ -69,7 +69,7 @@ function onLoad() {
     this.result = this.xhr.responseText;
     this.next();
   } else {
-    this.onError();
+    this.xhr.onerror();
   }
 }
 
@@ -103,7 +103,7 @@ export default function kxhr(url, method = "get", data = null, options = {}) {
     reject: null,
     callbacks: [],
     onComplete: null,
-    xhr: new XMLHttpRequest(),
+    xhr: new XMLHttpRequest()
   };
 
   if (typeof options.success == "function") {
