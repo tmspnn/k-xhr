@@ -66,7 +66,7 @@ function next() {
 function onLoad() {
   if (this.xhr.status >= 200 && this.xhr.status < 400) {
     this.state = "resolved";
-    this.result = this.xhr.responseText;
+    this.result = this.xhr.response;
     this.next();
   } else {
     this.xhr.onerror();
@@ -75,7 +75,7 @@ function onLoad() {
 
 function onError() {
   this.state = "rejected";
-  this.err = new Error(this.xhr.responseText || this.xhr.statusText);
+  this.err = new Error(this.xhr.response || this.xhr.statusText);
   this.next();
 }
 
@@ -92,7 +92,6 @@ function onError() {
  * @param {Number} options.timeout
  * @param {Function} options.onProgress
  * @param {Function} options.beforeSend
- * @returns
  */
 export default function kxhr(url, method = "get", data = null, options = {}) {
   const k = {
