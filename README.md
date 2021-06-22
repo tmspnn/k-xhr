@@ -1,6 +1,6 @@
 # k-xhr
 
-Lightweight XMLHttpRequest, **1.3Kb** gzipped.
+Lightweight XMLHttpRequest, **0.2KB** gzipped, Promise compatible, **No dependencies**, IE10+.
 
 Thanks to [JSONPlaceholder](https://jsonplaceholder.typicode.com/) for their open API which I used for testing.
 
@@ -18,7 +18,7 @@ import kxhr from "k-xhr";
 const data = { id: 1, data: "Testing string" };
 
 kxhr("https://jsonplaceholder.typicode.com/posts", "post", JSON.stringify(data), {
-  contentType: "application/json",
+  contentType: "application/json"
 }).then((res) => {
   const json = JSON.parse(res);
   console.log(json.id);
