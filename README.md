@@ -1,6 +1,6 @@
 # k-xhr
 
-Lightweight XMLHttpRequest, **0.2KB** gzipped, Promise compatible, **No dependencies**, IE10+.
+Lightweight XMLHttpRequest, **0.2KB** gzipped, Promise compatible, **No dependencies**, IE11+.
 
 Thanks to [JSONPlaceholder](https://jsonplaceholder.typicode.com/) for their open API which I used for testing.
 
