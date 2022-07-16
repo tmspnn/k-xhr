@@ -1,104 +1,76 @@
-// External modules
-const fs = require("fs");
-const JSDOM = require("jsdom").JSDOM;
-const test = require("ava");
+import { readFileSync } from "node:fs";
+import assert from "node:assert/strict";
+import test from "node:test";
+import { JSDOM } from "jsdom";
 
-// Setup the testing environment
-const kxhrJS = fs.readFileSync(__dirname + "/../dist/k-xhr.js");
-const dom = new JSDOM(
-  `
-<!DOCTYPE html>
-<html lang="en">
+test("kxhr", async (t) => {
+	const libStr = readFileSync("./dist/kxhr.min.js");
+	const eq = assert.strictEqual;
+	const dom = new JSDOM(
+		`<!doctype html>
+		<html>
+			<head></head>
+			<body>
+				<script>${libStr}</script>
+			</body>
+		</html>`,
+		{ runScripts: "dangerously" }
+	);
+	const window = dom.window;
 
-<head>
-  <meta charset="utf-8" />
-  <title>Testing</title>
-</head>
+	await t.test("Get", (t) => {
+		window
+			.eval(`kxhr("https://jsonplaceholder.typicode.com/todos/1")`)
+			.then((res) => {
+				const json = JSON.parse(res);
+				eq(json.id, 1);
+				eq(json.userId, 1);
+				eq(json.title, "delectus aut autem");
+				eq(json.completed, false);
+			});
+	});
 
-<body>
-  <script>${kxhrJS}</script>
-</body>
+	await t.test("Post JSON", (t) => {
+		window
+			.eval(
+				`kxhr("https://jsonplaceholder.typicode.com/posts", "post", JSON.stringify({ id: 1, data: "Testing string" }), { contentType: "application/json" })`
+			)
+			.then((res) => {
+				const json = JSON.parse(res);
+				eq(json.id, 101);
+				eq(json.data, "Testing string");
+			});
+	});
 
-</html>
-`,
-  {
-    runScripts: "dangerously"
-  }
-);
+	await t.test("Cancel", (t) => {
+		let i = 0;
 
-// Run testcases
-test("var", (t) => {
-  with (dom.window) {
-    t.is(typeof kxhr, "function");
-  }
-});
+		const k = window
+			.eval(`kxhr("https://jsonplaceholder.typicode.com/todos/1")`)
+			.then(() => ++i)
+			.finally(() => eq(i, 0));
 
-test("default get", (t) => {
-  with (dom.window) {
-    return kxhr("https://jsonplaceholder.typicode.com/todos/1").then((res) => {
-      const json = JSON.parse(res);
-      t.is(json.id, 1);
-      t.is(json.userId, 1);
-      t.is(json.title, "delectus aut autem");
-      t.is(json.completed, false);
-    });
-  }
-});
+		k.cancel();
+	});
 
-test("post JSON", (t) => {
-  with (dom.window) {
-    return kxhr(
-      "https://jsonplaceholder.typicode.com/posts",
-      "post",
-      JSON.stringify({
-        id: 1,
-        data: "Testing string"
-      }),
-      {
-        contentType: "application/json"
-      }
-    ).then((res) => {
-      const json = JSON.parse(res);
-      t.is(json.id, 101);
-      t.is(json.data, "Testing string");
-    });
-  }
-});
+	await t.test("Await", async (t) => {
+		const res = await window.eval(
+			`kxhr("https://jsonplaceholder.typicode.com/todos/1")`
+		);
+		const json = JSON.parse(res);
+		eq(json.id, 1);
+		eq(json.userId, 1);
+		eq(json.title, "delectus aut autem");
+		eq(json.completed, false);
+	});
 
-test("sequential catch", (t) => {
-  with (dom.window) {
-    let i = 0;
-    return kxhr("https://jsonplaceholder.typicode.com/todos/1")
-      .then(() => {
-        ++i;
-        throw new Error("catch 1");
-      })
-      .catch((e) => {
-        ++i;
-        t.is(e.message, "catch 1");
-      })
-      .then(() => {
-        ++i;
-        throw new Error("catch 2");
-      })
-      .catch((e) => {
-        ++i;
-        t.is(e.message, "catch 2");
-      })
-      .finally(() => {
-        t.is(i, 4);
-      });
-  }
-});
-
-test("cancel", (t) => {
-  with (dom.window) {
-    let i = 0;
-    const k = kxhr("https://jsonplaceholder.typicode.com/todos/1")
-      .then(() => ++i)
-      .finally(() => {
-        t.is(i, 0);
-      });
-    k.cancel();
-  }
+	await t.test("Await & Throw", async (t) => {
+		try {
+			await window.eval(
+				`kxhr("https://jsonplaceholder.typicode.com/todos/1").then(() => { throw new Error("Custom error message..."); })`
+			);
+		} catch (e) {
+			eq(e.message, "Custom error message...");
+		}
+	});
 });
